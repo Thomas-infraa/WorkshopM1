@@ -21,10 +21,10 @@ jobs:
 
       # ---------- FRONT : tests + couverture (Vitest) ----------
       - name: Setup Node
+        if: hashFiles('apps/frontend/package.json') != ''
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '20'   # ⚠️ PAS DE CACHE pour éviter l'erreur
 
       - name: Install deps (front)
         if: hashFiles('apps/frontend/package.json') != ''
@@ -35,6 +35,7 @@ jobs:
         if: hashFiles('apps/frontend/package.json') != ''
         working-directory: apps/frontend
         run: npm test -- --coverage --watch=false || echo "No front tests"
+
 
       # ---------- BACK : tests + couverture (pytest) ----------
       - name: Setup Python
