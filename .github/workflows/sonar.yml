@@ -39,10 +39,10 @@ jobs:
 
       # ---------- BACK : tests + couverture (pytest) ----------
       - name: Setup Python
+        if: hashFiles('apps/backend/requirements.txt', 'apps/backend/pyproject.toml') != ''
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: '3.11'   # ⚠️ pas de cache => plus d'erreur
 
       - name: Install deps (back)
         if: hashFiles('apps/backend/requirements.txt') != ''
@@ -55,8 +55,9 @@ jobs:
         if: hashFiles('apps/backend/requirements.txt') != ''
         working-directory: apps/backend
         run: |
-          # Remplace "app" si ton package Flask a un autre nom
+          # Remplace "app" par le nom réel de ton package Flask si différent
           pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term || echo "No back tests"
+
 
       # ---------- SCAN UNIQUE À LA RACINE ----------
       - name: SonarCloud Scan
