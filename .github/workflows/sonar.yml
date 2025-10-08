@@ -1,5 +1,10 @@
 name: SonarCloud (monorepo, 1 seul projet)
 
+permissions:
+  contents: read
+  pull-requests: read
+
+
 on:
   pull_request:
     branches: [ main, develop ]
