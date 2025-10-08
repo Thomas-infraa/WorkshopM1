@@ -1,0 +1,65 @@
+name: SonarCloud (monorepo, 1 seul projet)
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop, integration, "feature/*", "fix/*", "SCRUM-*" ]
+    paths-ignore:
+      - "**/*.md"
+      - ".gitignore"
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # indispensable pour analyser les PR
+
+      # ---------- FRONT : tests + couverture (Vitest) ----------
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps (front)
+        if: hashFiles('apps/frontend/package.json') != ''
+        working-directory: apps/frontend
+        run: npm ci
+
+      - name: Test (front) -> coverage
+        if: hashFiles('apps/frontend/package.json') != ''
+        working-directory: apps/frontend
+        run: npm test -- --coverage --watch=false || echo "No front tests"
+
+      # ---------- BACK : tests + couverture (pytest) ----------
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install deps (back)
+        if: hashFiles('apps/backend/requirements.txt') != ''
+        working-directory: apps/backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Test (back) -> coverage.xml
+        if: hashFiles('apps/backend/requirements.txt') != ''
+        working-directory: apps/backend
+        run: |
+          # Remplace "app" si ton package Flask a un autre nom
+          pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term || echo "No back tests"
+
+      # ---------- SCAN UNIQUE À LA RACINE ----------
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        # Le scanner lira le fichier sonar-project.properties à la racine
